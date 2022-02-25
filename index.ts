@@ -29,16 +29,18 @@ const rps = (choice: number): string => {
   return result;
 }
 
-var players = {
-  player1: choice;
-  player2: choice;
+class players = {
+  player1: number = 0;
+  player2: number = 0;
 }
   
 
 io.on('connection', (socket) => {  
   console.log(socket.id);
   socket.on('choice', (choice: number) => {
-    players.player1
+    var players = {
+      player1: choice;
+    };
     console.log(result);
   });
   socket.emit('result', (result));
