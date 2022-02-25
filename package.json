@@ -6,12 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.ts",
-	"client": "nodemon client.ts",
+    "client": "nodemon client.ts",
     "build": "tsc --project ./"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.2",
     "socket.io": "^4.4.1",
     "socket.io-client": "^4.4.1"
