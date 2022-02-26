@@ -1,25 +1,27 @@
 import express from 'express';
-import cors from 'cors';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 
-interface ServerToClientEvents { }
+import Rps from './Game/Rps';
+
+interface ServerToClientEvents {
+}
 interface ClientToServerEvents {
-  choice: (choice: number) => void;
+  playerChoice: (choice: string) => void;
 }
 interface InterServerEvents {
-  disconnect: (socket:Socket) => void;
+  disconnect: (socket: Socket) => void;
 }
-interface SocketData { }
-const port = process.env.PORT || 4000;
+interface SocketData {
+  choice: string;
+}
 
+const port = process.env.PORT || 4000;
 const app = express();
+
 const httpServer = createServer(app);
-const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
-  cors: {
-    origin: 'http://localhost:3000',
-  }
-});
+
+const RpsGame = new Rps();
 
 const rps = (choice: number): string => {
   var result = 'hi';
@@ -29,28 +31,35 @@ const rps = (choice: number): string => {
   return result;
 }
 
-class players = {
+class players {
   player1: number = 0;
   player2: number = 0;
 }
   
-
-io.on('connection', (socket) => {  
-  console.log(socket.id);
-  socket.on('choice', (choice: number) => {
-    var players = {
-      player1: choice;
-    };
-    console.log(result);
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData>(httpServer, {
+    cors: {
+      origin: 'http://localhost:3000',
+    }
   });
-  socket.emit('result', (result));
+
+io.on('connection', (socket) => {
+  RpsGame.addPlayer([socket.id,'']);
+  console.log(socket.id);
+  socket.on('playerChoice', (choice: string) => {
+    console.log(`Player ${socket.id} chose ${choice}`);
+    console.log(RpsGame.getPlayerArr().length);
+  });
   socket.on('disconnect', () => {
+    RpsGame.removePlayer(socket.id);
     console.log(`Disconnected from ${socket.id}`);
   });
 });
 
-
-io.on('disconnect', (socket) => {
+io.on('disconnect', (socket: Socket) => {
   console.log(`Disconnected from ${socket.id}`);
 });
 
