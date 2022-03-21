@@ -2,18 +2,28 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 
+import Player from './Game/Player';
 import Rps from './Game/Rps';
 
 interface ServerToClientEvents {
+  sendGameInfo: (data: string) => void;
+  startGame: () => void;
+  updateLobby: (players: Player[]) => void;
 }
 interface ClientToServerEvents {
+  getLobby: () => void;
+  joinLobby: (username: string) => void;
   playerChoice: (choice: string) => void;
+  startGame: () => void;
+  toggleLeader: () => void;
+  toggleReady: () => void;
 }
 interface InterServerEvents {
   disconnect: (socket: Socket) => void;
 }
 interface SocketData {
   choice: string;
+  username: string;
 }
 
 const port = process.env.PORT || 4000;
@@ -23,19 +33,6 @@ const httpServer = createServer(app);
 
 const RpsGame = new Rps();
 
-const rps = (choice: number): string => {
-  var result = 'hi';
-  if (choice === 0){
-    return 'you lost!';
-  }
-  return result;
-}
-
-class players {
-  player1: number = 0;
-  player2: number = 0;
-}
-  
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
@@ -46,16 +43,34 @@ const io = new Server<
     }
   });
 
-io.on('connection', (socket) => {
-  RpsGame.addPlayer([socket.id,'']);
+io.on('connection', (socket: Socket) => {
   console.log(socket.id);
   socket.on('playerChoice', (choice: string) => {
     console.log(`Player ${socket.id} chose ${choice}`);
-    console.log(RpsGame.getPlayerArr().length);
+    console.table(RpsGame.getPlayerArr());
   });
   socket.on('disconnect', () => {
     RpsGame.removePlayer(socket.id);
+    io.emit('updateLobby', RpsGame.getPlayerArr());
     console.log(`Disconnected from ${socket.id}`);
+  });
+  socket.on('getLobby', () => {
+    io.emit('updateLobby', RpsGame.getPlayerArr());
+  });
+  socket.on('joinLobby', (username) => {
+    RpsGame.addPlayer([socket.id, username]);
+  });
+  socket.on('startGame', () => {
+    io.emit('startGame');
+  });
+  socket.on('toggleReady', () => {
+    RpsGame.toggleReady(socket.id);
+    io.emit('updateLobby', RpsGame.getPlayerArr());
+  });
+  socket.on('toggleLeader', (player: string) => {
+    RpsGame.toggleLeader(socket.id);
+    RpsGame.toggleLeader(player);
+    io.emit('updateLobby', RpsGame.getPlayerArr());
   });
 });
 
@@ -66,3 +81,9 @@ io.on('disconnect', (socket: Socket) => {
 httpServer.listen(port, () => {
   console.log(`Server listening on port ${port}!`);
 });
+
+const playGame = (socket: Socket) => {
+  RpsGame.startGame();
+  RpsGame.matchPlayers();
+  io.emit('updateLobby', RpsGame.getPlayerArr());
+}
