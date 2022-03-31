@@ -46,6 +46,7 @@ const io = new Server<
 io.on('connection', (socket: Socket) => {
   console.log(socket.id);
   socket.on('playerChoice', (choice: string) => {
+    RpsGame.setChoice(socket.id, choice);
     console.log(`Player ${socket.id} chose ${choice}`);
     console.table(RpsGame.getPlayerArr());
   });
@@ -62,6 +63,7 @@ io.on('connection', (socket: Socket) => {
   });
   socket.on('startGame', () => {
     io.emit('startGame');
+    playGame(socket);
   });
   socket.on('toggleReady', () => {
     RpsGame.toggleReady(socket.id);
@@ -75,6 +77,7 @@ io.on('connection', (socket: Socket) => {
 });
 
 io.on('disconnect', (socket: Socket) => {
+  RpsGame.removePlayer(socket.id);
   console.log(`Disconnected from ${socket.id}`);
 });
 

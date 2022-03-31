@@ -2,9 +2,10 @@ class Player {
   socketId: string;
   username: string;
   healthPoints: number | undefined;
-  opponent: Player | undefined;
+  opponent: string | undefined;
   ready: boolean;
   leader: boolean;
+  choice: string | undefined;
 
   constructor(player: [string, string]) {
     this.socketId = player[0];
@@ -13,6 +14,7 @@ class Player {
     this.opponent = undefined;
     this.ready = false;
     this.leader = false;
+    this.choice = undefined;
   }
 }
 
