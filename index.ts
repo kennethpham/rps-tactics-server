@@ -30,25 +30,24 @@ const port = process.env.PORT || 4000;
 const app = express();
 
 const httpServer = createServer(app);
-
 const RpsGame = new Rps();
 
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
-  SocketData>(httpServer, {
-    cors: {
-      origin: 'http://localhost:3000',
-    }
-  });
+  SocketData
+>(httpServer, {
+  cors: {
+    origin: 'http://localhost:3000',
+  },
+});
 
 io.on('connection', (socket: Socket) => {
   console.log(socket.id);
   socket.on('playerChoice', (choice: string) => {
     RpsGame.setChoice(socket.id, choice);
     console.log(`Player ${socket.id} chose ${choice}`);
-    console.table(RpsGame.getPlayerArr());
   });
   socket.on('disconnect', () => {
     RpsGame.removePlayer(socket.id);
@@ -63,7 +62,7 @@ io.on('connection', (socket: Socket) => {
   });
   socket.on('startGame', () => {
     io.emit('startGame');
-    playGame(socket);
+    playGame();
   });
   socket.on('toggleReady', () => {
     RpsGame.toggleReady(socket.id);
@@ -85,8 +84,22 @@ httpServer.listen(port, () => {
   console.log(`Server listening on port ${port}!`);
 });
 
-const playGame = (socket: Socket) => {
+// used for the round interval
+var roundLoop: NodeJS.Timer;
+
+// used for round timer
+const roundTime = 10000;
+
+const playGame = () => {
   RpsGame.startGame();
   RpsGame.matchPlayers();
   io.emit('updateLobby', RpsGame.getPlayerArr());
-}
+  roundLoop = setInterval(playRound, roundTime);
+};
+
+const playRound = () => {
+  RpsGame.resolvePlayers();
+  RpsGame.matchPlayers();
+  io.emit('updateLobby', RpsGame.getPlayerArr());
+  if (RpsGame.getPlayersActive() < 2) clearInterval(roundLoop);
+};
