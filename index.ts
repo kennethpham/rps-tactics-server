@@ -6,6 +6,8 @@ import Player from './Game/Player';
 import Rps from './Game/Rps';
 
 interface ServerToClientEvents {
+  checkWinner: () => void;
+  newRound: () => void;
   sendGameInfo: (data: string) => void;
   startGame: () => void;
   updateLobby: (players: Player[]) => void;
@@ -93,6 +95,7 @@ const roundTime = 10000;
 const playGame = () => {
   RpsGame.startGame();
   RpsGame.matchPlayers();
+  io.emit('newRound');
   io.emit('updateLobby', RpsGame.getPlayerArr());
   roundLoop = setInterval(playRound, roundTime);
 };
@@ -100,6 +103,11 @@ const playGame = () => {
 const playRound = () => {
   RpsGame.resolvePlayers();
   RpsGame.matchPlayers();
+  io.emit('newRound');
   io.emit('updateLobby', RpsGame.getPlayerArr());
-  if (RpsGame.getPlayersActive() < 2) clearInterval(roundLoop);
+  if (RpsGame.getPlayersActive() < 2) {
+    clearInterval(roundLoop);
+    console.log('Game Loop finished');
+    io.emit('checkWinner');
+  }
 };
